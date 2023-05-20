@@ -11,6 +11,7 @@ function ListEmployees() {
     let [showAddForm, setShowAddForm] = useState(false);
     let [newEmployeeName, setNewEmployeeName] = useState("");
     let [newEmployeePasscode, setNewEmployeePasscode] = useState("");
+    let [newEmployeeAdmin, setNewEmployeeAdmin] = useState(false);
 
     useEffect(() => {
         const fetchEmployees = async () => {
@@ -77,7 +78,13 @@ function ListEmployees() {
             onChange={(e) => setNewEmployeeName(e.target.value)}
           />
           <button onClick={addEmployee}>Save</button>
-          <button onClick={() => setShowAddForm(false)}>Cancel</button>
+          <button onClick={() => {
+            setShowAddForm(false);
+            setNewEmployeeName("")
+            setNewEmployeePasscode("")
+            setNewEmployeeAdmin(false)
+            }
+        }>Cancel</button>
         </div>
       )}
 
