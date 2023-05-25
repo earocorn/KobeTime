@@ -1,20 +1,22 @@
-import { useState } from 'react'
-import firebaseui from 'firebaseui'
-import 'firebaseui/dist/firebaseui.css'
 import './App.css'
+import ClockIn from './components/ClockIn'
 import ListEmployees from './components/ListEmployees'
-import { initializeApp } from 'firebase/app'
-import { getFirestore, collection, getDocs, Firestore } from 'firebase/firestore'
-import { documentId } from 'firebase/firestore/lite'
-import firestore from './firebase'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import Login from './components/Login'
+import EmployeeView from './components/EmployeeView'
 
 function App() {
 
   return (
-    <>
-    {/* Only for testing, main page should be for employee as user*/}
-    <ListEmployees />
-    </>
+    <Router>
+        <Routes>
+          {/* Root page should NOT be ListEmployees component */}
+          <Route path='/' Component={Login}/>
+          <Route path='/clock' Component={ClockIn}/>
+          <Route path='/employees' Component={ListEmployees}/>
+          <Route path='/account' Component={EmployeeView}/>
+        </Routes>
+    </Router>
   )
 }
 
