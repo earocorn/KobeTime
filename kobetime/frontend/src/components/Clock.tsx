@@ -2,7 +2,7 @@ interface Props {
     
 }
 
-function ClockIn() {
+function Clock() {
     return (
         <>
         <h1>WE ARE IN ANOTHER DIMENSION</h1>
@@ -10,4 +10,4 @@ function ClockIn() {
     )
 }
 
-export default ClockIn
+export default Clock

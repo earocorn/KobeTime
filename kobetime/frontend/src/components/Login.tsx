@@ -1,13 +1,9 @@
-import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail, sendSignInLinkToEmail, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, isSignInWithEmailLink, onAuthStateChanged, sendPasswordResetEmail, sendSignInLinkToEmail, signInWithEmailAndPassword, signInWithEmailLink, signOut } from "firebase/auth";
 import app, { auth, firestore } from "../private/firebase";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ErrorMessage from "./ErrorMessage";
 import { collection, getDocs } from "firebase/firestore";
-
-const actionCodeSettings = {
-    url:'https://kobetime.web.app/account'
-}
 
 function Login() {
 
@@ -36,24 +32,6 @@ function Login() {
         } else {
             setEmployeeName("NO CURRENT USER")
         }
-    }
-
-    async function handleLinkSignIn() {
-        sendSignInLinkToEmail(auth, email, actionCodeSettings).then(() => {
-            //show that link was succesfully sent
-            console.log("link sent")
-        }).catch((error) => {
-            console.error(error)
-        })
-    }
-
-    async function handleLinkForgotPassword() {
-        sendPasswordResetEmail(auth, email).then(() => {
-            //password reset email sent
-            console.log("link sent")
-        }).catch((error) => {
-            console.error(error)
-        })
     }
 
     const navigate = useNavigate();
@@ -85,6 +63,23 @@ function Login() {
         getAuth().signOut();
         setSignedIn(false);
     }
+    
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+
+        if (!email) {
+          email = window.prompt('Please provide your email for confirmation');
+        } else {
+            signInWithEmailLink(auth, email, window.location.href)
+            .then(() => {
+              window.localStorage.removeItem('emailForSignIn');
+            })
+            .catch((error) => {
+              console.error(error);
+            });
+        }
+
+      }
     
 
     useEffect(() => {
@@ -135,6 +130,12 @@ function Login() {
                 <div className="row mb-2">
                     <ErrorMessage errormsg={errorText}/>
                     <button className="btn btn-primary" onClick={handleSignIn}>Sign In</button>
+                </div>
+                <div className="row mb-2">
+                    <a className="link" href="/loginemail" style={{ display:'flex', justifyContent:'center' }}>Sign in via email</a>
+                </div>
+                <div className="row mb-2">
+                    <a className="link" href="/forgotpassword" style={{ display:'flex', justifyContent:'center' }}>Forgot Password?</a>
                 </div>
                 </div>
             </div>

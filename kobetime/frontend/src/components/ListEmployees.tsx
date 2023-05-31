@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react"
 import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, updateDoc } from "firebase/firestore";
 import app, { auth } from "../private/firebase";
-import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail, signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ErrorMessage from "./ErrorMessage";
+import NotifMessage from "./NotifMessage";
+import { fetchEmployees } from "../employee";
 
 const firestore = getFirestore(app);
 
@@ -17,7 +19,9 @@ function ListEmployees() {
     let [newEmployeePasscode, setNewEmployeePasscode] = useState("");
     let [newEmployeeEmail, setNewEmployeeEmail] = useState("");
     let [newEmployeeAdmin, setNewEmployeeAdmin] = useState(false);
+
     let [formSubmissionError, setFormSubmissionError] = useState("");
+    let [notification, setNotification] = useState("");
 
     let [editEmployeeName, setEditEmployeeName] = useState(["", ""]);
     let [editEmployeePasscode, setEditEmployeePasscode] = useState(["", ""]);
@@ -34,29 +38,24 @@ function ListEmployees() {
     }
 
     useEffect(() => {
-        fetchEmployees();
+        fetchEmployees().then((updatedEmployees) => {
+          setEmployees(updatedEmployees);
+        });
       }, []);
 
-    async function fetchEmployees() {
-      const employeesRef = collection(firestore, 'employees');
-          const querySnapshot = await getDocs(employeesRef);
-    
-          const employeeList = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            name: doc.get('name'),
-            passcode: doc.get('passcode'),
-            admin: doc.get('admin'),
-            email: doc.get('email')
-          }));
-    
-          setEmployees(employeeList);
-          return employeeList;
-    }
-
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       if(!user) {
         navigate('/')
       }
+      fetchEmployees().then((curEmployees) => {
+        const curEmployee = curEmployees.find((employee) => employee.email === getAuth().currentUser?.email);
+        if(!curEmployee) {
+          console.error('No employee logged in.');
+        } else
+        if(curEmployee?.admin === false) {
+          navigate('/')
+        }
+      })
     })
 
     async function deleteEmployee(employeeId: string) {
@@ -174,6 +173,11 @@ function ListEmployees() {
             const curUser = userCredential.user;
             
             console.log("Created employee " + curUser.email + " with default password.");
+            if(curUser.email) {
+              sendPasswordResetEmail(getAuth(), curUser.email).then(() => {
+
+              })
+            }
             getAuth().signOut();
         } catch (error) {
           setFormSubmissionError("OOPS")
@@ -246,15 +250,23 @@ function ListEmployees() {
       setShowAddForm(false);
 
     }
+
+    async function handleGoToClock() {
+      navigate('/clock')
+    }
     
-    
+    async function handleGoToProfile() {
+      navigate('/account')
+    }
 
     return (
         <>
         
         {showEditFormId.length === 0 && !showAddForm && (<>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <button style={{marginRight:'auto'}} className='btn btn-danger' onClick={() => handleSignOut()}>Back</button>
+        <div style={{ display: 'flex' }} className="btn-group">
+        <button style={{marginRight:'auto'}} className='btn btn-danger' onClick={() => handleSignOut()}>Sign Out</button>
+        <button className='btn btn-primary' onClick={handleGoToClock}>Clock</button>
+        <button className='btn btn-info' onClick={handleGoToProfile}>My Account</button>
         <button className='btn btn-success' onClick={() => setShowAddForm(true)}>Add</button>
         </div>
         
@@ -284,6 +296,7 @@ function ListEmployees() {
      <form className="form-floating">
       <div className="container-sm border border-5 border-warning rounded-5" style={{ maxWidth:350, justifyContent:'center', padding:20, backgroundColor:'blanchedalmond'}}>
         <div className="col mb-3">
+        <NotifMessage notifmsg="Please inform new employees to check their email to set a password."/>
        <div className="row mb-3">
          <label htmlFor="employeeName" className="form-label">
            Employee Name
