@@ -251,17 +251,18 @@ function ListEmployees() {
 
     }
 
-    async function handleGoToClock() {
+    function handleGoToClock() {
       navigate('/clock')
     }
     
-    async function handleGoToProfile() {
+    function handleGoToProfile() {
       navigate('/account')
     }
 
     return (
         <>
-        
+        {getAuth().currentUser &&
+        (<>
         {showEditFormId.length === 0 && !showAddForm && (<>
         <div style={{ display: 'flex' }} className="btn-group">
         <button style={{marginRight:'auto'}} className='btn btn-danger' onClick={() => handleSignOut()}>Sign Out</button>
@@ -475,6 +476,8 @@ function ListEmployees() {
    </div>
    </>
       )}
+        </>
+        )}
         </>
     )
 }

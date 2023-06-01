@@ -1,0 +1,7 @@
+.react-datepicker__input-container input {
+    height: 20px;
+    width: 90px;
+    border-radius: 5px;
+    background-color: whitesmoke;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}

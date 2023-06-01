@@ -37,7 +37,6 @@ function Login() {
     const navigate = useNavigate();
 
     async function handleSignIn() {
-        console.log(email + ": " + password);
         try{
             if(!signedIn) {
                     console.log(getAuth().currentUser)

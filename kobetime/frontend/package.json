@@ -14,12 +14,14 @@
     "firebase": "^9.22.0",
     "firebaseui": "^6.0.2",
     "react": "^18.2.0",
+    "react-datepicker": "^4.12.0",
     "react-dom": "^18.2.0",
     "react-router": "^6.11.2"
   },
   "devDependencies": {
     "@types/mime": "^3.0.1",
     "@types/react": "^18.0.28",
+    "@types/react-datepicker": "^4.11.2",
     "@types/react-dom": "^18.0.11",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
