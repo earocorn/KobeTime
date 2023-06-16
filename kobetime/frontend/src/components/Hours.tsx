@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { SetStateAction, useEffect, useState } from "react";
 import { Employee, TimeEntry, fetchEmployeeFromID, fetchTimeEntries } from "../employee";
 import { Timestamp } from "firebase/firestore";
 import DatePicker from "react-datepicker";
 import arrowIcon from "../assets/arrowRight.svg";
 
 import "react-datepicker/dist/react-datepicker.css";
-import "./Hours.css";
+import "../styles/Hours.css";
+import Table from "react-bootstrap/esm/Table";
+import Stack from "react-bootstrap/esm/Stack";
 
 
 interface HoursProps {
@@ -27,28 +29,39 @@ function Hours(props: HoursProps) {
 
     const handleStartDateChange = (date: Date) => {
         setStartDate(date);
+        let periodEntries: TimeEntry[] = [];
         entries.map((entry) => {
-            if(entry.clock_in.toDate().toDateString() >= date.toDateString() && entry.clock_in.toDate().toDateString() <= endDate.toDateString()) {
-                setEntriesInPeriod([...entriesInPeriod, entry]);
+            if(entry.clock_in.toDate() >= date && entry.clock_in.toDate() <= endDate) {
+                periodEntries.push(entry);
             }
         });
-        let durations: number[] = [];
-        entriesInPeriod.map((entry) => {
-            durations.push(parseFloat(timeDuration(entry.clock_in, entry.clock_out)));
-        });
-        const durationSum = durations.reduce((acc, curr) => acc + curr, 0);
-
-        setTotalHoursInPeriod(durationSum);
+        setEntriesInPeriod(periodEntries);
+        refreshTotalHoursInPeriod(periodEntries);
     };
     
     const handleEndDateChange = (date: Date) => {
         setEndDate(date);
+        let periodEntries: TimeEntry[] = [];
         entries.map((entry) => {
-            if(entry.clock_in.toDate().toDateString() <= date.toDateString() && entry.clock_in.toDate().toDateString() >= startDate.toDateString()) {
-                setEntriesInPeriod([...entriesInPeriod, entry]);
+            if(entry.clock_in.toDate() <= date && entry.clock_in.toDate() >= startDate) {
+                periodEntries.push(entry);
             }
         });
+        setEntriesInPeriod(periodEntries);
+        refreshTotalHoursInPeriod(periodEntries);
     };
+
+    function refreshTotalHoursInPeriod(entries: TimeEntry[]) {
+        let durations: number[] = [];
+        entries.map((entry) => {
+            let duration = entry.duration;
+            if(entry.duration > 15) { duration = 0 }
+            durations.push(duration);
+        });
+        const durationSum = durations.reduce((acc, curr) => acc + curr, 0);
+
+        setTotalHoursInPeriod(durationSum);
+    }
 
     function formatTime(timestamp: Timestamp) {
         const date = timestamp.toDate();
@@ -58,36 +71,37 @@ function Hours(props: HoursProps) {
         })
     }
 
-    function timeDuration(start: Timestamp, end: Timestamp) {
-        const startTime = start.seconds;
-        const endTime = end.seconds;
-        const elapsedTime = endTime - startTime;
-        const elapsedHours = elapsedTime / 60;
-        return elapsedHours.toFixed(2);
-    }
-
     useEffect(() => {
-        fetchEmployeeFromID(employeeID).then((fetchedEmployee) => {
+        const fetchData = async () => {
+            if(!employee) {
+          fetchEmployeeFromID(employeeID).then((fetchedEmployee) => {
             if(fetchedEmployee) {
                 setEmployee(fetchedEmployee);
             }
-        })
-        fetchTimeEntries(employeeID).then((fetchedEntries) => {
-            if(fetchedEntries) {
-                setEntries(fetchedEntries);
-            }
-        })
-    });
+        })  
+        }
+        if(entries.length === 0) {
+            fetchTimeEntries(employeeID).then((entries) => {
+                if(entries) {
+                    setEntries(entries);
+                }
+            })
+        }
+        };
+
+        fetchData();
+    }, []);
 
     return (
         <>
+        <Stack direction='vertical' style={{ alignItems:'center'}}>
         <div>
             <h1 style={{ display:'flex', justifyContent:'center', fontWeight:'lighter'}}>Hours</h1>
-            <div className="container border border-dark bg- bg-opacity-25 border-3 text-center rounded-pill p-2" style={{ maxWidth:275}}>
+            <div className="container border border-gray border-2 text-center rounded-pill p-2" style={{ maxWidth:275}}>
                 <div className="row" style={{ maxWidth:400, justifyContent:'left'}}>
                     <div className="col-3" style={{ }}>
                         <div style={{ }}>
-                            <DatePicker wrapperClassName="datePicker" selected={startDate} onChange={handleStartDateChange}/>
+                            <DatePicker wrapperClassName="datePicker" selected={startDate} onChange={handleStartDateChange} isClearable={false}/>
                         </div>
                     </div>
                     <div className="col-3" style={{  paddingLeft:57 }}>
@@ -105,8 +119,8 @@ function Hours(props: HoursProps) {
             adminView === false ? "Your" : employee?.name + "'s" 
             } total hours from this period are {totalHoursInPeriod > 0 ? totalHoursInPeriod : "not available"}.</h5>
         </div>
-        <div className="container border border-secondary border-4 rounded">
-            <table className="table">
+        <div className="container border border-gray border-3 rounded" style={{ maxWidth:850, padding:10}}>
+            <Table striped bordered hover>
                 <thead>
                     <tr>
                     <th scope="col">#</th>
@@ -122,28 +136,20 @@ function Hours(props: HoursProps) {
                 <tbody>
                     { entriesInPeriod && entriesInPeriod.map((entry) => {
                         return (
-                            <tr>
+                            <tr key={entry.id}>
                                 <th scope="row">{entriesInPeriod.indexOf(entry)}</th>
                                 <td>{entry.clock_in.toDate().toLocaleDateString()}</td>
                                 <td>{formatTime(entry.clock_in)}</td>
                                 <td>{formatTime(entry.clock_out)}</td>
-                                <td>{timeDuration(entry.clock_in, entry.clock_out)}</td>
+                                <td>{entry.duration ? entry.duration.toString() : 'null'}</td>
                                 {adminView && (<td><button>Edit</button></td>)}
                             </tr>
                         );
                     })}
                 </tbody>
-            </table>
-            <div>
-                data: 
-                { entries && entries.map((entry) => {
-                    return (
-                        <p key={entry.id}>Entry {entries.indexOf(entry)} clockin time : {entry.clock_in.toDate().toUTCString()}</p>
-                    )
-                })}
-            </div>    
+            </Table>
         </div>
-        
+        </Stack>
         </>
     )
 }

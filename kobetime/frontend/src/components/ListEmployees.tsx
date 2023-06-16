@@ -6,6 +6,11 @@ import { useNavigate } from "react-router-dom";
 import ErrorMessage from "./ErrorMessage";
 import NotifMessage from "./NotifMessage";
 import { fetchEmployees } from "../employee";
+import Table from "react-bootstrap/esm/Table";
+import ButtonGroup from "react-bootstrap/esm/ButtonGroup";
+import Button from "react-bootstrap/esm/Button";
+import Stack from "react-bootstrap/esm/Stack";
+import Hours from "./Hours";
 
 const firestore = getFirestore(app);
 
@@ -268,26 +273,56 @@ function ListEmployees() {
         <button style={{marginRight:'auto'}} className='btn btn-danger' onClick={() => handleSignOut()}>Sign Out</button>
         <button className='btn btn-primary' onClick={handleGoToClock}>Clock</button>
         <button className='btn btn-info' onClick={handleGoToProfile}>My Account</button>
-        <button className='btn btn-success' onClick={() => setShowAddForm(true)}>Add</button>
         </div>
         
-        <ul className="list-group">
-            {employees.length === 0 && <h1>NO EMPLOYEES</h1>}
-            {employees.map(employee => <li className="list-group-item" style={{ display: 'flex', justifyContent: 'space-between' }} key={employee.id}>
-                {employee.name} 
-                | Passcode: {employee.passcode}
-                | Admin: {employee.admin ? "Yes" : "No"}
-                | Email: {employee.email}
-                <button style={{marginLeft:'auto'}} className="btn btn-info">View</button>
-                <button style={{marginLeft:10, marginRight:10}} className="btn btn-warning" onClick={() => 
-                  {
+        <div className="container border border-gray border-3 rounded" style={{ maxWidth:700, padding:10}}>
+        <Stack direction='horizontal' gap={3}>
+          <h2>Employees</h2>
+          <Button variant="secondary" className="ms-auto">Summary</Button>
+          <div className="vr"></div>
+          <Button variant="success" onClick={() => setShowAddForm(true)}>New Employee</Button>
+        </Stack>
+        <Table striped bordered hover>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Name</th>
+              <th scope="col">Code</th>
+              <th scope="col">Admin</th>
+              <th scope="col">Email</th>
+              <th scope="col">Actions</th>
+              <th scope="col">X</th>
+            </tr>
+          </thead>
+          <tbody>
+            { employees && employees.map((employee) => { 
+              return(
+                <tr key={employee.id}>
+                  <th scope="row">{employees.indexOf(employee)}</th>
+                  <td>{employee.name}</td>
+                  <td>{employee.passcode}</td>
+                  <td>{employee.admin ? 'Yes' : 'No'}</td>
+                  <td>{employee.email}</td>
+                  <td>
+                    <ButtonGroup>
+                      <Button variant="info">View</Button>
+                      <Button variant="warning" onClick={() => 
+                    {
                     setShowEditFormId(employee.id);
                     getEmployee(employee.id);
-                    }}>Edit</button>
-                <button className="btn btn-danger" onClick={() => deleteEmployee(employee.id)}>Delete</button>
-                </li>)}
-        </ul>
-        <button style={{ }} className="btn btn-secondary">Report</button>
+                    }}>Edit</Button>
+                    </ButtonGroup>
+                  </td>
+                  <td>
+                    <Button variant="danger" onClick={() => deleteEmployee(employee.id)}>Delete</Button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Table>
+        </div>
+        <Hours adminView={true} employeeID={showEditFormId}/>
         </>)}
 
         {showAddForm && (

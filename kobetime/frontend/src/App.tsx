@@ -1,14 +1,14 @@
-import './App.css'
+import './styles/App.css'
 import ListEmployees from './components/ListEmployees'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Login from './components/Login'
 import EmployeeView from './components/EmployeeView'
 import LoginEmail from './components/LoginEmail'
 import ForgotPassword from './components/ForgotPassword'
-import Clock from './components/Clock'
 import { getAuth } from 'firebase/auth'
 import { collection, getDocs } from 'firebase/firestore'
 import { firestore } from './private/firebase'
+import ClockPage from './components/ClockPage'
 
 function App() {
   let employeeAdmin: boolean = false;
@@ -29,9 +29,8 @@ function App() {
   return (
     <Router>
         <Routes>
-          {/* Root page should NOT be ListEmployees component */}
           <Route path='/' Component={Login}/>
-          <Route path='/clock' Component={Clock}/>
+          <Route path='/clock' Component={ClockPage}/>
           <Route path='/employees' Component={ListEmployees}/>
           <Route path='/account' Component={EmployeeView}/>
           <Route path='/loginemail' Component={LoginEmail}/>
