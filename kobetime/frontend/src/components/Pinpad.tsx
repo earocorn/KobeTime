@@ -1,7 +1,7 @@
 import { Component, ReactElement, useEffect, useState } from "react";
 import { Alert, Button, ButtonGroup, Col, Container, Row, Stack } from "react-bootstrap";
 import '../styles/pinpad.css';
-import { Employee, fetchEmployeeFromPasscode } from "../employee";
+import { Employee, clockEmployee, fetchEmployeeFromPasscode } from "../employee";
 import { useNavigate } from "react-router-dom";
 
 interface PinpadProps {
@@ -20,6 +20,7 @@ function Pinpad(props: PinpadProps) {
     const [showResult, setShowResult] = useState(false);
     const [clockedEmployee, setClockedEmployee] = useState<Employee | null>(null);
     const [clockedTime, setClockedTime] = useState<Date | null>(null);
+    const [result, setResult] = useState(["", ""]);
 
     function updateText(num: string) {
         setError(false);
@@ -33,14 +34,21 @@ function Pinpad(props: PinpadProps) {
             const currentPwd = pwdText;
             setPwdText('');
             console.log('Currentpwd = ' + currentPwd);
-            fetchEmployeeFromPasscode(currentPwd).then((employee) => {
+            fetchEmployeeFromPasscode(currentPwd).then(async (employee) => {
                 //accepted
                 if(employee) {
                     //navigate('/account');
                     console.log('Employee found: ' + employee.name);
                     setClockedEmployee(employee);
-                    setClockedTime(new Date());
+                    const clocked = new Date();
+                    setClockedTime(clocked);
                     setShowResult(true);
+                    const response = await clockEmployee(employee, props.inOut, clocked);
+                    if(response === 'success') {
+                        setResult(['You have been successfully clocked ' + props.inOut + ' at ' + clocked?.toLocaleTimeString() + '!', 'success']);
+                    } else {
+                        setResult([response, 'danger'])
+                    }
                 } else {
                     setError(true);
                 }
@@ -115,9 +123,13 @@ function Pinpad(props: PinpadProps) {
                 <>
                 <Container>
                     <Stack direction='vertical'>
-                        <h1  style={{ fontStyle:'italic', justifyContent:'center', display:'flex' }}>Hello, {clockedEmployee?.name}!</h1>
-                        <Alert variant="success" style={{ justifyContent:'center', display:'flex', fontWeight:'bold', fontSize:30 }}>
-                            You have been successfully clocked in at {clockedTime?.toLocaleTimeString()}!
+                        <Stack direction="horizontal">
+                        {props.backButton}
+                        <h1 className='text-center' style={{ fontStyle:'italic', justifyContent:'center', marginRight:'auto', fontSize:50 }}>Hello, {clockedEmployee?.name}!</h1>
+                        </Stack>
+                        
+                        <Alert variant={result[1] === 'success' ? 'success' : 'danger'} style={{ justifyContent:'center', display:'flex', fontWeight:'bold', fontSize:30 }}>
+                            {result[0]}
                         </Alert>
                     </Stack>
                 </Container>

@@ -8,6 +8,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import "../styles/Hours.css";
 import Table from "react-bootstrap/esm/Table";
 import Stack from "react-bootstrap/esm/Stack";
+import Button from "react-bootstrap/esm/Button";
 
 
 interface HoursProps {
@@ -55,7 +56,8 @@ function Hours(props: HoursProps) {
         let durations: number[] = [];
         entries.map((entry) => {
             let duration = entry.duration;
-            if(entry.duration > 15) { duration = 0 }
+            if(entry.duration > 15 || entry.clock_out === null) { duration = 0 }
+            console.log(durations);
             durations.push(duration);
         });
         const durationSum = durations.reduce((acc, curr) => acc + curr, 0);
@@ -71,24 +73,29 @@ function Hours(props: HoursProps) {
         })
     }
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if(!employee) {
-          fetchEmployeeFromID(employeeID).then((fetchedEmployee) => {
-            if(fetchedEmployee) {
-                setEmployee(fetchedEmployee);
+    async function testFunction() {
+        await fetchData();
+        console.info(entries);
+        console.log(entriesInPeriod);
+    }
+
+    async function fetchData() {
+        const fetchedEmployee = await fetchEmployeeFromID(employeeID);
+        if(fetchedEmployee) {
+            if(employee !== fetchedEmployee) {
+                setEntries([]);
             }
-        })  
+            setEmployee(fetchedEmployee);
         }
         if(entries.length === 0) {
-            fetchTimeEntries(employeeID).then((entries) => {
-                if(entries) {
-                    setEntries(entries);
-                }
-            })
-        }
-        };
+            const fetchedEntries = await fetchTimeEntries(employeeID);
+            if(fetchedEntries) {
+                setEntries(entries);
+            }
+        } else { console.error('entries popd')}
+    };
 
+    useEffect(() => {
         fetchData();
     }, []);
 
@@ -116,10 +123,10 @@ function Hours(props: HoursProps) {
             </div>
             
             <h5 style={{ display:'flex', justifyContent:'center', fontWeight:'light', padding:8}}>{
-            adminView === false ? "Your" : employee?.name + "'s" 
+            adminView === false ? "Your" : employee?.id + "'s" 
             } total hours from this period are {totalHoursInPeriod > 0 ? totalHoursInPeriod : "not available"}.</h5>
         </div>
-        <div className="container border border-gray border-3 rounded" style={{ maxWidth:850, padding:10}}>
+        <div className="container border border-gray border-3 rounded" style={{ maxWidth:850, padding:10 }}>
             <Table striped bordered hover>
                 <thead>
                     <tr>
@@ -129,23 +136,23 @@ function Hours(props: HoursProps) {
                     <th scope="col">End</th>
                     <th scope="col">Total</th>
                     {adminView && (
-                        <th scope="col"><button className="btn btn-success">Add</button></th>
+                        <th scope="col"><button className="btn btn-success" style={{ fontWeight:'bold' }} onClick={() => testFunction()}>+</button></th>
                     )}
                     </tr>
                 </thead>
                 <tbody>
-                    { entriesInPeriod && entriesInPeriod.map((entry) => {
+                    { entriesInPeriod ? entriesInPeriod.map((entry) => {
                         return (
                             <tr key={entry.id}>
                                 <th scope="row">{entriesInPeriod.indexOf(entry)}</th>
                                 <td>{entry.clock_in.toDate().toLocaleDateString()}</td>
                                 <td>{formatTime(entry.clock_in)}</td>
-                                <td>{formatTime(entry.clock_out)}</td>
-                                <td>{entry.duration ? entry.duration.toString() : 'null'}</td>
-                                {adminView && (<td><button>Edit</button></td>)}
+                                <td>{entry.clock_out !== null ? formatTime(entry.clock_out) : 'N/A'}</td>
+                                <td>{entry.duration.toString()}</td>
+                                {adminView && (<td><Button>Edit</Button></td>)}
                             </tr>
                         );
-                    })}
+                    }) : (<>No Entries in period</>)}
                 </tbody>
             </Table>
         </div>

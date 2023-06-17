@@ -1,4 +1,4 @@
-import { Timestamp, and, collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { Timestamp, addDoc, and, collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import { firestore } from "./private/firebase";
 import { getAuth } from "firebase/auth";
 import { getUserGeolocation, LatLong, allowedLocations, calculateDistance } from "./private/location";
@@ -35,7 +35,7 @@ export async function fetchEmployees() {
         clock_in: doc.get('clock_in'),
         clock_out: doc.get('clock_out'),
         employee_id: doc.get('employee_id'),
-        duration: (parseFloat(timeDuration(doc.get('clock_in'), doc.get('clock_out')))),
+        duration: (doc.get('clock_out') !== null ? parseFloat(timeDuration(doc.get('clock_in'), doc.get('clock_out'))) : 0),
     }));
     return entriesList;
   }
@@ -60,12 +60,13 @@ export async function fetchCurrentEmployee() {
 }
 
 export async function fetchEmployeeFromID(id: string) {
-  const employeeRef = doc(firestore, 'employees/'+id);
-  const querySnapshot = await getDoc(employeeRef);
-  if(querySnapshot.exists()) {
-    const employeeData = querySnapshot.data();
+  const employeesRef = collection(firestore, 'employees');
+  const querySnapshot = await getDocs(employeesRef);
+  const employee = querySnapshot.docs.find((user) => user.id === id);
+  if(employee) {
+    const employeeData = employee.data();
     const employeeDataValues: Employee = {
-      id: querySnapshot.id,
+      id: employeeData.id,
       name: employeeData.name,
       passcode: employeeData.passcode,
       admin: employeeData.admin,
@@ -113,27 +114,64 @@ export async function fetchEmployeeFromPasscode(passcode: string) {
 
 }
 
-export async function clockEmployee(employee: Employee, inOut: string):Promise<string> {
-  fetchTimeEntries(employee.id).then((entries) => {
-    if(entries.find((value) => value.clock_out === null)) {
+export async function clockEmployee(employee: Employee, inOut: string, time: Date):Promise<string> {
+  const ERROR_GENERAL = "Error: Unable to clock in/out at this time.";
+  const newEntry = {
+    clock_in: Timestamp.fromDate(time),
+    clock_out: null,
+    employee_id: employee.id,
+  };
 
-    }
-    if(inOut === 'in') {
+  const entries = await fetchTimeEntries(employee.id);
+  entries.sort((a, b) => a.clock_in.toMillis() - b.clock_in.toMillis());
+  try {
 
-    } else if(inOut === 'out') {
+    if(entries.find((entry) => entry.clock_out === null)) {
+    const lastEntry = entries.reduceRight((acc, cur) => acc || cur);
+    if(lastEntry) {
+      if(inOut === 'in') {
 
-    } else {
-      return 'Error: Invalid clock status. Should be \'in\' or \'out\'.';
-    }
+        if(isSameDay(lastEntry.clock_in.toDate(), new Date())) {
+          return 'Error: You are already clocked in today!';
+          // already clocked in
+        } else {
+          // clock in new timestamp and set lastentry clockout to null
+          const lastEntryDocument = doc(firestore, 'timeEntries', lastEntry.id);
+          await updateDoc(lastEntryDocument, { clock_out: null });
+          await addDoc(collection(firestore, 'timeEntries'), newEntry)
+          return 'success';
+        }
+      } else if(inOut === 'out') {
+        console.error('The out clause.')
+        const lastEntryDocument = doc(firestore, 'timeEntries', lastEntry.id);
+        await updateDoc(lastEntryDocument, { clock_out: Timestamp.fromDate(time) });
+        return 'success';
+      } else {
+        //invalid operation, should be 'in' or 'out'
+          return 'Error: Invalid operation.';
+        }
+      }
+
+      } else {
+        if (inOut === 'in') {
+          //clock in because theres no NULL clockout as last entry
+          await addDoc(collection(firestore, 'timeEntries'), newEntry);
+          return 'success';
+        } else {
+          //employee is already clocked out
+          return 'Error: You are not clocked in!';
+        }
+      }
+  } catch (error) {
+    console.error(error);
+    return ERROR_GENERAL;
+  }
     //if last timeentry is clocked in
       //if last time entry was NOT today, set auto clockout on that entry to null or autoclockout value
       //else if last time entry was today, DONT clock them in, return an error explaining that they already clocked in today
     //if last timeentry is clocked out
       //clock in employee return success
-
-
-  });
-  return 'Error: ';
+  return 'end of statement';
 }
 
 export function validateAccessClock() {
@@ -180,6 +218,13 @@ export interface Employee {
 export interface TimeEntry {
   id: string;
   clock_in: Timestamp;
-  clock_out: Timestamp;
+  clock_out: Timestamp | null;
   duration: number;
+}
+
+export function isSameDay(date1: Date, date2: Date) {
+  if(date1.getUTCDay() === date2.getUTCDay()) {
+    return true;
+  }
+  return false;
 }

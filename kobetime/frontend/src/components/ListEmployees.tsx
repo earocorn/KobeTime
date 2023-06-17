@@ -33,6 +33,9 @@ function ListEmployees() {
     let [editEmployeeEmail, setEditEmployeeEmail] = useState(["", ""]);
     let [editEmployeeAdmin, setEditEmployeeAdmin] = useState([false, false]);
 
+    let viewHoursId = "";
+    let [showHours, setShowHours] = useState(false);
+
     function handleSignOut() {
       auth.signOut().then(function() {
         console.log('Signed out user: ' + ((auth.currentUser?.email == undefined) ? "No user signed in." : auth.currentUser?.email));
@@ -305,7 +308,11 @@ function ListEmployees() {
                   <td>{employee.email}</td>
                   <td>
                     <ButtonGroup>
-                      <Button variant="info">View</Button>
+                      <Button variant="info" onClick={() => {
+                        viewHoursId = employee.id;
+                        console.info(viewHoursId);
+                        setShowHours(true);
+                      }}>View</Button>
                       <Button variant="warning" onClick={() => 
                     {
                     setShowEditFormId(employee.id);
@@ -322,7 +329,7 @@ function ListEmployees() {
           </tbody>
         </Table>
         </div>
-        <Hours adminView={true} employeeID={showEditFormId}/>
+        {!showHours ? (<></>) : (<Hours adminView={true} employeeID={viewHoursId}/>)}
         </>)}
 
         {showAddForm && (
