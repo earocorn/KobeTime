@@ -3,8 +3,8 @@
 export const allowedLocations: LatLong[] = [
   //home (test)
   { latitude: 34.7373568, longitude: -86.7500032 },
-  //kobe
   { latitude: 34.749229070051264, longitude:-86.7403018429308 },
+  //kobe,
 ]
 
 export interface LatLong {

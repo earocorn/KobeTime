@@ -1,0 +1,15 @@
+.btn.viewbutton:disabled {
+    background-color: transparent;
+}
+
+.btn.viewbutton:hover {
+    background-color: white;
+}
+
+.btn.editbutton {
+    background-color: rgb(233, 198, 0);
+}
+
+.btn.editbutton:hover {
+    background-color: transparent;
+}

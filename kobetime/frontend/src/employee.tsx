@@ -1,4 +1,4 @@
-import { Timestamp, addDoc, and, collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
+import { Timestamp, addDoc, and, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, updateDoc } from "firebase/firestore";
 import { firestore } from "./private/firebase";
 import { getAuth } from "firebase/auth";
 import { getUserGeolocation, LatLong, allowedLocations, calculateDistance } from "./private/location";
@@ -28,17 +28,50 @@ export async function fetchEmployees() {
 
   export async function fetchTimeEntries(id: string) {
     const timeEntriesRef = collection(firestore, 'timeEntries');
-    const querySnapshot = await getDocs(timeEntriesRef);
-
+    const orderedQuery = query(timeEntriesRef, orderBy("clock_in", "asc"));
+    const querySnapshot = await getDocs(orderedQuery);
     const entriesList: TimeEntry[] = querySnapshot.docs.filter((doc) => doc.get('employee_id') === id).map((doc) => ({
         id: doc.id,
         clock_in: doc.get('clock_in'),
         clock_out: doc.get('clock_out'),
         employee_id: doc.get('employee_id'),
         duration: (doc.get('clock_out') !== null ? parseFloat(timeDuration(doc.get('clock_in'), doc.get('clock_out'))) : 0),
+        flag: doc.get('flag'),
     }));
     return entriesList;
   }
+
+  export async function deleteTimeEntry(entryId: string) {
+    const timeEntriesRef = collection(firestore, 'timeEntries');
+    const entryDoc = doc(timeEntriesRef, entryId);
+    const entry = await getDoc(entryDoc);
+    if(entry.exists()) {
+      deleteDoc(entryDoc);
+    } else {
+      console.error("Entry with id: " + entryId + " does not exist!");
+    }
+  }
+
+  export async function editTimeEntry(entryId: string, data: {[x: string]: any; }) {
+    const timeEntriesRef = collection(firestore, 'timeEntries');
+    const entryDoc = doc(timeEntriesRef, entryId);
+    const entry = await getDoc(entryDoc);
+    if(entry.exists()) {
+      updateDoc(entryDoc, data);
+    } else {
+      console.error("Entry with id: " + entryId + " does not exist!");
+    }
+}
+
+export async function addTimeEntry(data: {[x: string] :any; }): Promise<string> {
+  const timeEntriesRef = collection(firestore, 'timeEntries');
+  addDoc(timeEntriesRef, data).then(() => {
+    return 'success';
+  }, () => {
+    return 'Error: There was an error adding time entry.';
+  });
+  return 'Error: There was an error adding time entry.'
+}
 
 export async function fetchCurrentEmployee() {
     if(getAuth().currentUser) {
@@ -61,17 +94,18 @@ export async function fetchCurrentEmployee() {
 
 export async function fetchEmployeeFromID(id: string) {
   const employeesRef = collection(firestore, 'employees');
-  const querySnapshot = await getDocs(employeesRef);
-  const employee = querySnapshot.docs.find((user) => user.id === id);
-  if(employee) {
+  const employeeDoc = doc(employeesRef, id);
+  const employee = await getDoc(employeeDoc);
+  if(employee.exists()) {
     const employeeData = employee.data();
     const employeeDataValues: Employee = {
-      id: employeeData.id,
+      id: id,
       name: employeeData.name,
       passcode: employeeData.passcode,
       admin: employeeData.admin,
       email: employeeData.email
     };
+    console.info('employee.tsx: employeeData = ' + JSON.stringify(employeeData));
     return employeeDataValues;
   } else {
     console.error('Employee does not exist! id: ' + id);
@@ -120,6 +154,7 @@ export async function clockEmployee(employee: Employee, inOut: string, time: Dat
     clock_in: Timestamp.fromDate(time),
     clock_out: null,
     employee_id: employee.id,
+    flag: true,
   };
 
   const entries = await fetchTimeEntries(employee.id);
@@ -137,14 +172,14 @@ export async function clockEmployee(employee: Employee, inOut: string, time: Dat
         } else {
           // clock in new timestamp and set lastentry clockout to null
           const lastEntryDocument = doc(firestore, 'timeEntries', lastEntry.id);
-          await updateDoc(lastEntryDocument, { clock_out: null });
+          await updateDoc(lastEntryDocument, { clock_out: null, flag:true });
           await addDoc(collection(firestore, 'timeEntries'), newEntry)
           return 'success';
         }
       } else if(inOut === 'out') {
         console.error('The out clause.')
         const lastEntryDocument = doc(firestore, 'timeEntries', lastEntry.id);
-        await updateDoc(lastEntryDocument, { clock_out: Timestamp.fromDate(time) });
+        await updateDoc(lastEntryDocument, { clock_out: Timestamp.fromDate(time), flag:false });
         return 'success';
       } else {
         //invalid operation, should be 'in' or 'out'
@@ -220,6 +255,7 @@ export interface TimeEntry {
   clock_in: Timestamp;
   clock_out: Timestamp | null;
   duration: number;
+  flag: boolean;
 }
 
 export function isSameDay(date1: Date, date2: Date) {

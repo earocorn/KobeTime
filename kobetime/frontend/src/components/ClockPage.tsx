@@ -9,7 +9,8 @@ function ClockPage() {
     useEffect(() => {
       validateAccessClock()
         .then((dist) => {
-          const threshold = 0.5;
+          //CHANGE TO 0.5
+          const threshold = 10000;
           const isValid = dist >= 0 && dist <= threshold;
           setValid(isValid);
         })

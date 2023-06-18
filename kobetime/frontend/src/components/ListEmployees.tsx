@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
-import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getFirestore, updateDoc } from "firebase/firestore";
 import app, { auth } from "../private/firebase";
-import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import ErrorMessage from "./ErrorMessage";
 import NotifMessage from "./NotifMessage";
@@ -11,6 +11,11 @@ import ButtonGroup from "react-bootstrap/esm/ButtonGroup";
 import Button from "react-bootstrap/esm/Button";
 import Stack from "react-bootstrap/esm/Stack";
 import Hours from "./Hours";
+import Container from "react-bootstrap/esm/Container";
+
+import '../styles/ListEmployees.css';
+import Modal from "react-bootstrap/esm/Modal";
+import Form from "react-bootstrap/esm/Form";
 
 const firestore = getFirestore(app);
 
@@ -34,7 +39,7 @@ function ListEmployees() {
     let [editEmployeeAdmin, setEditEmployeeAdmin] = useState([false, false]);
 
     let viewHoursId = "";
-    let [showHours, setShowHours] = useState(false);
+    let [showHours, setShowHours] = useState([false, ""]);
 
     function handleSignOut() {
       auth.signOut().then(function() {
@@ -267,80 +272,104 @@ function ListEmployees() {
       navigate('/account')
     }
 
+    function refreshHours(id: string) {
+      setShowHours([true, id]);
+    }
+
+    function summarize() {
+      setShowHours([false, ""]);
+    }
+
     return (
         <>
         {getAuth().currentUser &&
         (<>
-        {showEditFormId.length === 0 && !showAddForm && (<>
+        <>
         <div style={{ display: 'flex' }} className="btn-group">
         <button style={{marginRight:'auto'}} className='btn btn-danger' onClick={() => handleSignOut()}>Sign Out</button>
         <button className='btn btn-primary' onClick={handleGoToClock}>Clock</button>
         <button className='btn btn-info' onClick={handleGoToProfile}>My Account</button>
         </div>
         
-        <div className="container border border-gray border-3 rounded" style={{ maxWidth:700, padding:10}}>
-        <Stack direction='horizontal' gap={3}>
-          <h2>Employees</h2>
-          <Button variant="secondary" className="ms-auto">Summary</Button>
-          <div className="vr"></div>
-          <Button variant="success" onClick={() => setShowAddForm(true)}>New Employee</Button>
-        </Stack>
-        <Table striped bordered hover>
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Name</th>
-              <th scope="col">Code</th>
-              <th scope="col">Admin</th>
-              <th scope="col">Email</th>
-              <th scope="col">Actions</th>
-              <th scope="col">X</th>
-            </tr>
-          </thead>
-          <tbody>
-            { employees && employees.map((employee) => { 
-              return(
-                <tr key={employee.id}>
-                  <th scope="row">{employees.indexOf(employee)}</th>
-                  <td>{employee.name}</td>
-                  <td>{employee.passcode}</td>
-                  <td>{employee.admin ? 'Yes' : 'No'}</td>
-                  <td>{employee.email}</td>
-                  <td>
-                    <ButtonGroup>
-                      <Button variant="info" onClick={() => {
-                        viewHoursId = employee.id;
-                        console.info(viewHoursId);
-                        setShowHours(true);
-                      }}>View</Button>
-                      <Button variant="warning" onClick={() => 
-                    {
-                    setShowEditFormId(employee.id);
-                    getEmployee(employee.id);
-                    }}>Edit</Button>
-                    </ButtonGroup>
-                  </td>
-                  <td>
-                    <Button variant="danger" onClick={() => deleteEmployee(employee.id)}>Delete</Button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </Table>
-        </div>
-        {!showHours ? (<></>) : (<Hours adminView={true} employeeID={viewHoursId}/>)}
-        </>)}
+        <Container className="border border-3 rounded" style={{ maxWidth:'80%', padding:10}}>
+          <Stack direction='vertical'>
+            <Stack direction='horizontal' gap={3}>
+            <h2>Employees</h2>
+            <Button variant="secondary" className="ms-auto" style={{ maxHeight:40 }} onClick={() => summarize()}>Summary</Button>
+            <div className="vr"></div>
+            <Button variant="success" onClick={() => setShowAddForm(true)} style={{ maxHeight:40 }}>New Employee</Button>
+          </Stack>
+          <Container style={{ overflowX:'auto', display:'flex', justifyItems:'center', justifyContent:'center' }}>
+            <Table striped bordered hover style={{ justifyContent:'center', justifyItems:'center'}}>
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Name</th>
+                <th scope="col">Code</th>
+                <th scope="col">Admin</th>
+                <th scope="col">Email</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              { employees && employees.map((employee) => { 
+                return(
+                  <tr key={employee.id}>
+                    <th scope="row">{employees.indexOf(employee)}</th>
+                    <td>{employee.name}</td>
+                    <td>{employee.passcode}</td>
+                    <td>{employee.admin ? 'Yes' : 'No'}</td>
+                    <td>{employee.email}</td>
+                    <td>
+                      <ButtonGroup>
+                        <Button className="viewbutton" variant="info" onClick={() => {
+                          refreshHours(employee.id);
+                          console.info('viewHoursID : ' + employee.id);
+                        }}
+                        disabled={showHours[0] === true && showHours[1] === employee.id}>View</Button>
+                        <Button className="editbutton" variant="warning" onClick={() => 
+                      {
+                      setShowEditFormId(employee.id);
+                      getEmployee(employee.id);
+                      }}>Edit</Button>
+                      <Button variant="danger" onClick={() => deleteEmployee(employee.id)}>Delete</Button>
+                      </ButtonGroup>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </Table>  
+          </Container>
+          
+          </Stack>
+        
+        </Container>
+        {(showHours[0] === true) ? (<Hours adminView={true} employeeID={showHours[1].toString()}/>) : (<></>) }
+        </>
 
-        {showAddForm && (
-          <>
-      <h1 style={{ display:'flex', justifyContent:'center' }}>New Employee</h1>
-     <div style={{ display:'flex', justifyContent:'center'}}>
-     <form className="form-floating">
-      <div className="container-sm border border-5 border-warning rounded-5" style={{ maxWidth:350, justifyContent:'center', padding:20, backgroundColor:'blanchedalmond'}}>
+          <Modal
+          centered
+          show={showAddForm} 
+          onHide={() => {
+            setShowAddForm(false);
+            setNewEmployeeAdmin(false);
+            setNewEmployeeName("");
+            setNewEmployeePasscode("");
+            setNewEmployeeEmail("");
+            setFormSubmissionError("");
+          }}>
+            <Modal.Header closeButton>
+              <Modal.Title>
+                New Employee
+              </Modal.Title>
+            </Modal.Header>
+          <Modal.Body>
+            <Form className="form-floating">
+        <div className="container-sm border border-warning" style={{ justifyContent:'center', padding:20, backgroundColor:'blanchedalmond'}}>
         <div className="col mb-3">
         <NotifMessage notifmsg="Please inform new employees to check their email to set a password."/>
-       <div className="row mb-3">
+        <div className="row mb-3">
          <label htmlFor="employeeName" className="form-label">
            Employee Name
          </label>
@@ -405,119 +434,141 @@ function ListEmployees() {
         </div>
        </div>
        <ErrorMessage errormsg={formSubmissionError}/>
-       <div className="row mb-3 gap-2" style={{ display:'flex', justifyContent:'center'}}>
-       <button type="button" className="btn btn-primary rounded-pill" style={{ maxWidth:200, display:'flex' , justifyContent:'center', fontWeight:"bold"}} onClick={employeeSubmission}>
-         Submit
-       </button>
-       <button type="button" className="btn btn-danger rounded-pill" style={{ maxWidth:200, display:'flex' , justifyContent:'center', fontWeight:"bold"}} onClick={() => {
-        setShowAddForm(false);
-        setNewEmployeeAdmin(false);
-        setNewEmployeeName("");
-        setNewEmployeePasscode("");
-        setNewEmployeeEmail("");
-        setFormSubmissionError("");
-        }}>
-         Cancel
-       </button>
+       
        </div>
        </div>
-       </div>
-     </form>
-   </div>
-   </>
-      )}
+     </Form>
+          </Modal.Body>
 
-      { showEditFormId.length > 0 && (
-        <>
-      <h1 style={{ display:'flex', justifyContent:'center' }}>Edit Employee {editEmployeeName[0]}</h1>
+          <Modal.Footer>
+            <Button variant="primary" style={{fontWeight:"bold"}} onClick={employeeSubmission}>
+            Submit
+          </Button>
+          <Button variant="danger" style={{fontWeight:"bold"}} onClick={() => {
+          setShowAddForm(false);
+          setNewEmployeeAdmin(false);
+          setNewEmployeeName("");
+          setNewEmployeePasscode("");
+          setNewEmployeeEmail("");
+          setFormSubmissionError("");
+          }}>
+          Cancel
+            </Button>
+          </Modal.Footer>
+          </Modal>
+        <Modal
+        centered
+        show={showEditFormId.length > 0}
+        backdrop="static"
+        keyboard={false}
+        onHide={() => {
+          setShowEditFormId("");
+          setShowAddForm(false);
+          setEditEmployeeAdmin([false, false]);
+          setEditEmployeeName(["", ""]);
+          setEditEmployeePasscode(["", ""]);
+          setEditEmployeeEmail(["", ""]);
+          setFormSubmissionError("");
+        }}
+        >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Edit Employee {editEmployeeName[0]}
+          </Modal.Title>
+        </Modal.Header>
+
+        <Modal.Body>
+        <Form>
+          <Container className="border border-warning" style={{ justifyContent:'center', padding:20, backgroundColor:'blanchedalmond'}}>
+          <div className="col mb-3">
+          <div className="row mb-3">
+            <label htmlFor="employeeName" className="form-label">
+              Employee Name <small className="text-body-secondary">(Previously: {editEmployeeName[0]})</small>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="employeeName"
+              value={editEmployeeName[1]}
+              onChange={(e) => {
+                setEditEmployeeName([editEmployeeName[0], e.target.value]);
+                setFormSubmissionError("");
+              }}
+            />
+            </div>
+          </div>
+          <div className="row mb-3">
+            <label htmlFor="employeePasscode" className="form-label">
+              Passcode <small className="text-body-secondary">(Previously: {editEmployeePasscode[0]})</small>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="employeePasscode"
+              value={editEmployeePasscode[1]}
+              onChange={(e) => {
+                setEditEmployeePasscode([editEmployeePasscode[0], e.target.value]);
+                setFormSubmissionError("");
+              }}
+            />
+          </div>
+          <div className="row mb-3">
+            <label htmlFor="editEmail" className="form-label">
+              Email <small className="text-body-secondary">(Previously: {editEmployeeEmail[0]})</small>
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="editEmail"
+              value={editEmployeeEmail[1]}
+              onChange={(e) => {
+                setEditEmployeeEmail([editEmployeeEmail[0], e.target.value]);
+                setFormSubmissionError("");
+              }}
+              aria-describedby="inputGroupPrepend" 
+              required
+            />
+          </div>
+          <div className="row mb-3">
+          <div className="mb-3 form-check">
+            <input
+              type="checkbox"
+              className="form-check-input"
+              id="isAdmin"
+              checked={editEmployeeAdmin[1]}
+              onChange={(e) => setEditEmployeeAdmin([editEmployeeAdmin[0], e.target.checked])}
+            />
+            <label className="form-check-label" htmlFor="isAdmin">
+              Admin
+            </label>
+            </div>
+          </div>
+          <ErrorMessage errormsg={formSubmissionError}/>
+          
+          </Container>
+        </Form>
+        </Modal.Body>
+
+        <Modal.Footer>
+          <Button variant="primary" style={{fontWeight:"bold"}} onClick={updateEmployee}>
+            Submit
+          </Button>
+          <Button variant="danger" style={{fontWeight:"bold"}} onClick={() => {
+          setShowEditFormId("");
+          setShowAddForm(false);
+          setEditEmployeeAdmin([false, false]);
+          setEditEmployeeName(["", ""]);
+          setEditEmployeePasscode(["", ""]);
+          setEditEmployeeEmail(["", ""]);
+          setFormSubmissionError("");
+          }}>
+          Cancel
+          </Button>
+        </Modal.Footer>
+        </Modal>
      <div style={{ display:'flex', justifyContent:'center'}}>
-     <form>
-      <div className="container-sm border border-5 border-warning rounded-5" style={{ maxWidth:350, justifyContent:'center', padding:20, backgroundColor:'blanchedalmond'}}>
-       <div className="col mb-3">
-       <div className="row mb-3">
-         <label htmlFor="employeeName" className="form-label">
-           Employee Name <small className="text-body-secondary">(Previously: {editEmployeeName[0]})</small>
-         </label>
-         <input
-           type="text"
-           className="form-control"
-           id="employeeName"
-           value={editEmployeeName[1]}
-           onChange={(e) => {
-            setEditEmployeeName([editEmployeeName[0], e.target.value]);
-            setFormSubmissionError("");
-          }}
-         />
-         </div>
-       </div>
-       <div className="row mb-3">
-         <label htmlFor="employeePasscode" className="form-label">
-           Passcode <small className="text-body-secondary">(Previously: {editEmployeePasscode[0]})</small>
-         </label>
-         <input
-           type="text"
-           className="form-control"
-           id="employeePasscode"
-           value={editEmployeePasscode[1]}
-           onChange={(e) => {
-            setEditEmployeePasscode([editEmployeePasscode[0], e.target.value]);
-            setFormSubmissionError("");
-          }}
-         />
-       </div>
-       <div className="row mb-3">
-         <label htmlFor="editEmail" className="form-label">
-           Email <small className="text-body-secondary">(Previously: {editEmployeeEmail[0]})</small>
-         </label>
-         <input
-           type="text"
-           className="form-control"
-           id="editEmail"
-           value={editEmployeeEmail[1]}
-           onChange={(e) => {
-            setEditEmployeeEmail([editEmployeeEmail[0], e.target.value]);
-            setFormSubmissionError("");
-          }}
-          aria-describedby="inputGroupPrepend" 
-          required
-         />
-       </div>
-       <div className="row mb-3">
-       <div className="mb-3 form-check">
-         <input
-           type="checkbox"
-           className="form-check-input"
-           id="isAdmin"
-           checked={editEmployeeAdmin[1]}
-           onChange={(e) => setEditEmployeeAdmin([editEmployeeAdmin[0], e.target.checked])}
-         />
-         <label className="form-check-label" htmlFor="isAdmin">
-           Admin
-         </label>
-         </div>
-       </div>
-       <ErrorMessage errormsg={formSubmissionError}/>
-       <div className="row mb-3 gap-2" style={{ display:'flex', justifyContent:'center'}}>
-       <button type="button" className="btn btn-primary rounded-pill" style={{ maxWidth:200, display:'flex' , justifyContent:'center', fontWeight:"bold"}} onClick={updateEmployee}>
-         Submit
-       </button>
-       <button type="button" className="btn btn-danger rounded-pill" style={{ maxWidth:200, display:'flex' , justifyContent:'center', fontWeight:"bold"}} onClick={() => {
-        setShowEditFormId("");
-        setShowAddForm(false);
-        setEditEmployeeAdmin([false, false]);
-        setEditEmployeeName(["", ""]);
-        setEditEmployeePasscode(["", ""]);
-        setEditEmployeeEmail(["", ""]);
-        setFormSubmissionError("");
-        }}>
-         Cancel
-       </button>
-       </div>
-       </div>
-     </form>
+     
    </div>
-   </>
-      )}
         </>
         )}
         </>
