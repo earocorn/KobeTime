@@ -1,5 +1,11 @@
+.btn.viewbutton {
+    background-color: transparent;
+    border-color: transparent;
+}
+
 .btn.viewbutton:disabled {
     background-color: transparent;
+    border-color: transparent;
 }
 
 .btn.viewbutton:hover {
@@ -7,9 +13,15 @@
 }
 
 .btn.editbutton {
-    background-color: rgb(233, 198, 0);
+    background-color: transparent;
+    border-color: transparent;
 }
 
 .btn.editbutton:hover {
     background-color: transparent;
+    border-color: transparent;
+}
+
+.btn.deletebutton {
+    border-color: transparent;
 }

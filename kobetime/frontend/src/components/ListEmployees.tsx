@@ -17,6 +17,12 @@ import '../styles/ListEmployees.css';
 import Modal from "react-bootstrap/esm/Modal";
 import Form from "react-bootstrap/esm/Form";
 
+import EditIcon from "../assets/pencil.svg";
+import ViewIcon from "../assets/eye.svg";
+import ViewOffIcon from "../assets/eye-off.svg";
+import DeleteIcon from "../assets/trash.svg";
+import FloatingLabel from "react-bootstrap/esm/FloatingLabel";
+
 const firestore = getFirestore(app);
 
 function ListEmployees() {
@@ -37,6 +43,9 @@ function ListEmployees() {
     let [editEmployeePasscode, setEditEmployeePasscode] = useState(["", ""]);
     let [editEmployeeEmail, setEditEmployeeEmail] = useState(["", ""]);
     let [editEmployeeAdmin, setEditEmployeeAdmin] = useState([false, false]);
+
+    let [showDelete, setShowDelete] = useState(false);
+    let [deleteId, setDeleteId] = useState("");
 
     let viewHoursId = "";
     let [showHours, setShowHours] = useState([false, ""]);
@@ -72,16 +81,19 @@ function ListEmployees() {
     })
 
     async function deleteEmployee(employeeId: string) {
-        const confirmation = window.confirm('WARNING: Do you want to permanently delete this employee?');
+        setDeleteId(employeeId);
+        setShowDelete(true);
+    }
 
-        if(confirmation) {
-            try{
-                await deleteDoc(doc(firestore, 'employees', employeeId))
-                setEmployees((prevEmployees) => prevEmployees.filter((employee) => employee.id !== employeeId));
-            } catch (error) {
-                console.error('ERROR:', error);
-            }
-        }
+    async function handleDelete() {
+      try{
+        await deleteDoc(doc(firestore, 'employees', deleteId))
+        setEmployees((prevEmployees) => prevEmployees.filter((employee) => employee.id !== deleteId));
+      } catch (error) {
+        console.error('ERROR:', error);
+      }
+      setDeleteId("");
+      setShowDelete(false);
     }
 
     function validateEmail(email: string) {
@@ -291,7 +303,7 @@ function ListEmployees() {
         <button className='btn btn-info' onClick={handleGoToProfile}>My Account</button>
         </div>
         
-        <Container className="border border-3 rounded" style={{ maxWidth:'80%', padding:10}}>
+        <Container className="border border-3 rounded" style={{ maxWidth:800, padding:10}}>
           <Stack direction='vertical'>
             <Stack direction='horizontal' gap={3}>
             <h2>Employees</h2>
@@ -300,14 +312,13 @@ function ListEmployees() {
             <Button variant="success" onClick={() => setShowAddForm(true)} style={{ maxHeight:40 }}>New Employee</Button>
           </Stack>
           <Container style={{ overflowX:'auto', display:'flex', justifyItems:'center', justifyContent:'center' }}>
-            <Table striped bordered hover style={{ justifyContent:'center', justifyItems:'center'}}>
+            <Table striped bordered hover style={{ maxWidth:750, justifyContent:'center', justifyItems:'center'}}>
             <thead>
               <tr>
                 <th scope="col">#</th>
                 <th scope="col">Name</th>
                 <th scope="col">Code</th>
                 <th scope="col">Admin</th>
-                <th scope="col">Email</th>
                 <th scope="col">Actions</th>
               </tr>
             </thead>
@@ -316,23 +327,23 @@ function ListEmployees() {
                 return(
                   <tr key={employee.id}>
                     <th scope="row">{employees.indexOf(employee)}</th>
-                    <td>{employee.name}</td>
+                    <td><strong>{employee.name}</strong>
+            <p style={{ fontStyle:'italic'}}>{employee.email}</p></td>
                     <td>{employee.passcode}</td>
                     <td>{employee.admin ? 'Yes' : 'No'}</td>
-                    <td>{employee.email}</td>
                     <td>
                       <ButtonGroup>
-                        <Button className="viewbutton" variant="info" onClick={() => {
+                        <Button className="viewbutton" variant="outline-light" onClick={() => {
                           refreshHours(employee.id);
                           console.info('viewHoursID : ' + employee.id);
                         }}
-                        disabled={showHours[0] === true && showHours[1] === employee.id}>View</Button>
-                        <Button className="editbutton" variant="warning" onClick={() => 
+                        disabled={showHours[0] === true && showHours[1] === employee.id}><img style={{ width:20, height:20 }} src={(showHours[0] === true && showHours[1] === employee.id) ? ViewOffIcon : ViewIcon}></img></Button>
+                        <Button variant="outline-light" className="editbutton" onClick={() => 
                       {
                       setShowEditFormId(employee.id);
                       getEmployee(employee.id);
-                      }}>Edit</Button>
-                      <Button variant="danger" onClick={() => deleteEmployee(employee.id)}>Delete</Button>
+                      }}><img src={EditIcon} style={{ width:20, height:20 }}></img></Button>
+                      <Button variant="outline-danger" className="deletebutton" onClick={() => deleteEmployee(employee.id)}><img style={{width:20, height:20}} src={DeleteIcon}></img></Button>
                       </ButtonGroup>
                     </td>
                   </tr>
@@ -347,6 +358,36 @@ function ListEmployees() {
         </Container>
         {(showHours[0] === true) ? (<Hours adminView={true} employeeID={showHours[1].toString()}/>) : (<></>) }
         </>
+
+        <Modal
+        show={showDelete}
+        onHide={() => {
+            setDeleteId("");
+            setShowDelete(false);
+        }}
+        >
+            <Modal.Header
+            closeButton
+            >
+                <Modal.Title style={{ color:'red', fontWeight:'bold' }}>
+                    !WARNING!
+                </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                Are you sure you want to permanently delete this employee?
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="success" onClick={handleDelete}>
+                    Yes
+                </Button>
+                <Button variant="danger" onClick={() => {
+                    setShowDelete(false);
+                    setDeleteId("");
+                }}>
+                    No
+                </Button>
+            </Modal.Footer>
+        </Modal>
 
           <Modal
           centered

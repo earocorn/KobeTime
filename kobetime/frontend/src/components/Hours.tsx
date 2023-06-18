@@ -1,11 +1,8 @@
 import { SetStateAction, useEffect, useState } from "react";
 import { Employee, TimeEntry, addTimeEntry, deleteTimeEntry, fetchEmployeeFromID, fetchTimeEntries } from "../employee";
 import { Timestamp } from "firebase/firestore";
-import DatePicker from "react-datepicker";
 import arrowIcon from "../assets/arrowRight.svg";
 
-import "react-datepicker/dist/react-datepicker.css";
-import "../styles/Hours.css";
 import Table from "react-bootstrap/esm/Table";
 import Stack from "react-bootstrap/esm/Stack";
 import Button from "react-bootstrap/esm/Button";
@@ -13,6 +10,12 @@ import ButtonGroup from "react-bootstrap/esm/ButtonGroup";
 import Modal from "react-bootstrap/esm/Modal";
 import Form from "react-bootstrap/esm/Form";
 import { Alert } from "react-bootstrap";
+
+import "../styles/Hours.css";
+import "../styles/ListEmployees.css";
+
+import EditIcon from "../assets/pencil.svg";
+import DeleteIcon from "../assets/trash.svg";
 
 
 interface HoursProps {
@@ -44,30 +47,16 @@ function Hours(props: HoursProps) {
 
     let [errorAlert, setErrorAlert] = useState("");
 
-    const handleStartDateChange = (date: Date) => {
+    const handleStartDateChange = async (date: Date) => {
         setStartDate(date);
-        let periodEntries: TimeEntry[] = [];
         setEntries([]);
-        entries.map((entry) => {
-            if(entry.clock_in.toDate() >= date && entry.clock_in.toDate() <= endDate) {
-                periodEntries.push(entry);
-            }
-        });
-        setEntriesInPeriod(periodEntries);
-        refreshTotalHoursInPeriod(periodEntries);
+        await fetchData(date, endDate);
     }
     
-    const handleEndDateChange = (date: Date) => {
+    const handleEndDateChange = async (date: Date) => {
         setEndDate(date);
-        let periodEntries: TimeEntry[] = [];
         setEntries([]);
-        entries.map((entry) => {
-            if(entry.clock_in.toDate() <= date && entry.clock_in.toDate() >= startDate) {
-                periodEntries.push(entry);
-            }
-        });
-        setEntriesInPeriod(periodEntries);
-        refreshTotalHoursInPeriod(periodEntries);
+        await fetchData(startDate, date);
     }
 
     function refreshTotalHoursInPeriod(entries: TimeEntry[]) {
@@ -84,7 +73,7 @@ function Hours(props: HoursProps) {
     }
 
     async function refreshTable() {
-        await fetchData();
+        await fetchData(startDate, endDate);
     }
 
     function formatTime(timestamp: Timestamp) {
@@ -95,12 +84,7 @@ function Hours(props: HoursProps) {
         })
     }
 
-    async function refreshAll() {
-        await fetchData();
-        await refreshTable();
-    }
-
-    async function fetchData() {
+    async function fetchData(start: Date, end: Date) {
         console.info("fetching employee id = (" + props.employeeID + ")")
         const fetchedEmployee = await fetchEmployeeFromID(props.employeeID);
         if(fetchedEmployee) {
@@ -108,23 +92,22 @@ function Hours(props: HoursProps) {
             setEmployee(fetchedEmployee);
         }
         //const fetchedEntries = await fetchTimeEntries(props.employeeID);
-        fetchTimeEntries(props.employeeID).then((fetchedEntries) => {
+        let intervalStartDate = new Date(start);
+        intervalStartDate.setDate(intervalStartDate.getDate() + 1);
+        intervalStartDate.setHours(0, 0, 0, 0);
+        let intervalEndDate = new Date(end);
+        intervalEndDate.setDate(end.getDate() + 1);
+        intervalEndDate.setHours(23, 59, 59, 999);
+        console.info('Range: ', intervalStartDate, intervalEndDate);
+        fetchTimeEntries(props.employeeID, intervalStartDate, intervalEndDate).then((fetchedEntries) => {
             setEntries(fetchedEntries);
-            let periodEntries: TimeEntry[] = [];
-            fetchedEntries.map((entry) => {
-                if(entry.clock_in.toDate().getMonth() >= startDate.getMonth() && entry.clock_in.toDate().getMonth() <= endDate.getMonth()) {
-                    if(entry.clock_in.toDate().getDate() >= startDate.getDate() && entry.clock_in.toDate().getDate() <= endDate.getDate()) {
-                        periodEntries.push(entry);
-                    }
-                }
-            })
-            setEntriesInPeriod(periodEntries);
-            refreshTotalHoursInPeriod(periodEntries);
+            setEntriesInPeriod(fetchedEntries);
+            refreshTotalHoursInPeriod(fetchedEntries);
         })
     };
 
     useEffect(() => {
-        refreshAll();
+        refreshTable();
     }, [props]);
 
 
@@ -146,7 +129,7 @@ function Hours(props: HoursProps) {
             setNewData({});
             setShowAdd(false);
             setErrorAlert("");
-            refreshAll();
+            refreshTable();
             } else {
                 setErrorAlert("Please fill in all fields.");
             }
@@ -175,7 +158,7 @@ function Hours(props: HoursProps) {
         await deleteTimeEntry(deleteId);
         setDeleteId("");
         setShowDelete(false);
-        refreshAll();
+        refreshTable();
     }
 
 
@@ -189,7 +172,12 @@ function Hours(props: HoursProps) {
                 <div className="row" style={{ maxWidth:400, justifyContent:'left'}}>
                     <div className="col-3" style={{ }}>
                         <div style={{ }}>
-                            <DatePicker wrapperClassName="datePicker" selected={startDate} onChange={handleStartDateChange} isClearable={false}/>
+                            <input className="startdateinput" type="date" 
+                            value={startDate.toISOString().split('T')[0]} 
+                            onKeyDown={(e) => e.preventDefault()}
+                            onChange={(e) => {
+                                handleStartDateChange(new Date(e.target.value));
+                            }}/>
                         </div>
                     </div>
                     <div className="col-3" style={{  paddingLeft:57 }}>
@@ -197,7 +185,14 @@ function Hours(props: HoursProps) {
                     </div>
                     <div className="col-3" style={{ paddingLeft:34 }}>
                         <div style={{ }}>
-                        <DatePicker wrapperClassName="datePicker" selected={endDate} onChange={handleEndDateChange}/>
+                        <input className="enddateinput" type="date" 
+                        value={endDate.toISOString().split('T')[0]}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                            handleEndDateChange(new Date(e.target.value));
+                        }}
+                        required
+                        />
                         </div>
                     </div>
                 </div>
@@ -232,8 +227,8 @@ function Hours(props: HoursProps) {
                                 <td>{entry.duration.toString()}</td>
                                 {props.adminView && (<td>
                                     <ButtonGroup>
-                                        <Button className="editbutton" variant="warning" onClick={() => showEditModal(entry.id)}>Edit</Button>
-                                        <Button variant="danger" onClick={() => showDeleteModal(entry.id)}>Delete</Button>
+                                        <Button className="editbutton" variant="outline-light" onClick={() => showEditModal(entry.id)}><img style={{width:20, height:20}} src={EditIcon}/></Button>
+                                        <Button className="deletebutton" variant="outline-danger" onClick={() => showDeleteModal(entry.id)}><img style={{width:20, height:20}} src={DeleteIcon}/></Button>
                                     </ButtonGroup>
                                     </td>)}
                             </tr>
@@ -322,8 +317,8 @@ function Hours(props: HoursProps) {
         <Modal
         show={showDelete}
         onHide={() => {
-            setShowDelete(false);
             setDeleteId("");
+            setShowDelete(false);
         }}
         >
             <Modal.Header
@@ -341,8 +336,8 @@ function Hours(props: HoursProps) {
                     Yes
                 </Button>
                 <Button variant="danger" onClick={() => {
-                    setShowDelete(false);
                     setDeleteId("");
+                    setShowDelete(false);
                 }}>
                     No
                 </Button>

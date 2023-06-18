@@ -6,3 +6,13 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     font-size: 11px;
 }
+
+.startdateinput {
+    font-size: x-small;
+    border-radius: 5px;
+}
+
+.enddateinput {
+    font-size: x-small;
+    border-radius: 5px;
+}

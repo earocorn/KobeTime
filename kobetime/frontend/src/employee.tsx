@@ -26,20 +26,31 @@ export async function fetchEmployees() {
     return elapsedHours.toFixed(2);
 }
 
-  export async function fetchTimeEntries(id: string) {
-    const timeEntriesRef = collection(firestore, 'timeEntries');
-    const orderedQuery = query(timeEntriesRef, orderBy("clock_in", "asc"));
-    const querySnapshot = await getDocs(orderedQuery);
-    const entriesList: TimeEntry[] = querySnapshot.docs.filter((doc) => doc.get('employee_id') === id).map((doc) => ({
-        id: doc.id,
-        clock_in: doc.get('clock_in'),
-        clock_out: doc.get('clock_out'),
-        employee_id: doc.get('employee_id'),
-        duration: (doc.get('clock_out') !== null ? parseFloat(timeDuration(doc.get('clock_in'), doc.get('clock_out'))) : 0),
-        flag: doc.get('flag'),
+export async function fetchTimeEntries(id: string, startDate?: Date, endDate?: Date) {
+  const timeEntriesRef = collection(firestore, 'timeEntries');
+  const querySnapshot = await getDocs(timeEntriesRef);
+
+  let entriesList: TimeEntry[] = querySnapshot.docs
+    .filter((doc) => doc.get('employee_id') === id)
+    .map((doc) => ({
+      id: doc.id,
+      clock_in: doc.get('clock_in'),
+      clock_out: doc.get('clock_out'),
+      employee_id: doc.get('employee_id'),
+      duration: doc.get('clock_out') !== null ? parseFloat(timeDuration(doc.get('clock_in'), doc.get('clock_out'))) : 0,
+      flag: doc.get('flag'),
     }));
-    return entriesList;
+  if (startDate && endDate) {
+    entriesList = entriesList.filter((entry) => {
+      const entryDate = entry.clock_in.toDate();
+      return entryDate >= startDate && entryDate <= endDate;
+    });
   }
+
+  entriesList.sort((a, b) => a.clock_in.toMillis() - b.clock_in.toMillis());
+
+  return entriesList;
+}
 
   export async function deleteTimeEntry(entryId: string) {
     const timeEntriesRef = collection(firestore, 'timeEntries');
