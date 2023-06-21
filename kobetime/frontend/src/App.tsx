@@ -1,6 +1,6 @@
 import './styles/App.css'
 import ListEmployees from './components/ListEmployees'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import {  BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Login from './components/Login'
 import EmployeeView from './components/EmployeeView'
 import LoginEmail from './components/LoginEmail'

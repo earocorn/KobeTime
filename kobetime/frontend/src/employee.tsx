@@ -172,8 +172,8 @@ export async function clockEmployee(employee: Employee, inOut: string, time: Dat
   entries.sort((a, b) => a.clock_in.toMillis() - b.clock_in.toMillis());
   try {
 
-    if(entries.find((entry) => entry.clock_out === null)) {
     const lastEntry = entries.reduceRight((acc, cur) => acc || cur);
+    if(lastEntry.clock_out === null) {
     if(lastEntry) {
       if(inOut === 'in') {
 

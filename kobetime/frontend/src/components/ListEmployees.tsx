@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { addDoc, collection, deleteDoc, doc, getFirestore, updateDoc } from "firebase/firestore";
 import app, { auth } from "../private/firebase";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import ErrorMessage from "./ErrorMessage";
 import NotifMessage from "./NotifMessage";
 import { fetchEmployees } from "../employee";
@@ -21,7 +21,6 @@ import EditIcon from "../assets/pencil.svg";
 import ViewIcon from "../assets/eye.svg";
 import ViewOffIcon from "../assets/eye-off.svg";
 import DeleteIcon from "../assets/trash.svg";
-import FloatingLabel from "react-bootstrap/esm/FloatingLabel";
 
 const firestore = getFirestore(app);
 
