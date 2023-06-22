@@ -12,7 +12,7 @@ function Clock() {
         { showPinPad.showing && showPinPad.inOut.length !== 0 ? (
             <>
             <Pinpad inOut={showPinPad.inOut} backButton={
-            <Button variant="secondary" onClick={() => setShowPinPad({showing:false, inOut:''})} style={{ marginRight:'auto', fontWeight:'bold' }}>{'BACK'}</Button>
+            <Button variant="secondary" onClick={() => setShowPinPad({showing:false, inOut:''})} style={{ fontWeight:'bold' }}>{'BACK'}</Button>
             }/>
             </>
         ) : (

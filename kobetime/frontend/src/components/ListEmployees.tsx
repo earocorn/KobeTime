@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { addDoc, collection, deleteDoc, doc, getFirestore, updateDoc } from "firebase/firestore";
 import app, { auth } from "../private/firebase";
 import { createUserWithEmailAndPassword, getAuth, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
-import { useNavigate } from "react-router";
+import { NavLink, useNavigate } from "react-router-dom";
 import ErrorMessage from "./ErrorMessage";
 import NotifMessage from "./NotifMessage";
 import { fetchEmployees } from "../employee";
@@ -21,6 +21,10 @@ import EditIcon from "../assets/pencil.svg";
 import ViewIcon from "../assets/eye.svg";
 import ViewOffIcon from "../assets/eye-off.svg";
 import DeleteIcon from "../assets/trash.svg";
+import Navbar from "react-bootstrap/esm/Navbar";
+import { Nav, NavDropdown, NavItem, NavbarBrand } from "react-bootstrap";
+import NavbarToggle from "react-bootstrap/esm/NavbarToggle";
+import NavbarCollapse from "react-bootstrap/esm/NavbarCollapse";
 
 const firestore = getFirestore(app);
 
@@ -42,6 +46,13 @@ function ListEmployees() {
     let [editEmployeePasscode, setEditEmployeePasscode] = useState(["", ""]);
     let [editEmployeeEmail, setEditEmployeeEmail] = useState(["", ""]);
     let [editEmployeeAdmin, setEditEmployeeAdmin] = useState([false, false]);
+    let [signedInUser, setSignedInUser] = useState<{
+                                                      id: string;
+                                                      name: any;
+                                                      passcode: any;
+                                                      admin: any;
+                                                      email: any;
+                                                    } | undefined>();
 
     let [showDelete, setShowDelete] = useState(false);
     let [deleteId, setDeleteId] = useState("");
@@ -76,6 +87,7 @@ function ListEmployees() {
         if(curEmployee?.admin === false) {
           navigate('/')
         }
+        setSignedInUser(curEmployee);
       })
     })
 
@@ -293,14 +305,32 @@ function ListEmployees() {
 
     return (
         <>
-        {getAuth().currentUser &&
+        {getAuth().currentUser && signedInUser &&
         (<>
         <>
-        <div style={{ display: 'flex' }} className="btn-group">
-        <button style={{marginRight:'auto'}} className='btn btn-danger' onClick={() => handleSignOut()}>Sign Out</button>
-        <button className='btn btn-primary' onClick={handleGoToClock}>Clock</button>
-        <button className='btn btn-info' onClick={handleGoToProfile}>My Account</button>
-        </div>
+        <Navbar bg="dark" variant="dark" expand="default">
+          <Container>
+            <Navbar.Brand>KobeTime</Navbar.Brand>
+            <Navbar.Toggle aria-controls="nav"/>
+            <Navbar.Collapse id="nav">
+              <Nav className="mr-auto">
+                <NavDropdown title={`Signed in as ${signedInUser.name}`} style={{ marginRight:'auto' }}>
+                  <NavDropdown.Item onClick={handleGoToProfile}>
+                    My Account
+                  </NavDropdown.Item>
+                  <NavDropdown.Item onClick={handleGoToClock}>
+                    Time Clock
+                  </NavDropdown.Item>
+                  <NavDropdown.Item>
+                    <Button style={{ display:'flex' }} variant='outline-danger' onClick={() => handleSignOut()}>Sign Out</Button>
+                  </NavDropdown.Item>
+                </NavDropdown>
+              </Nav>
+            </Navbar.Collapse>
+              
+          </Container>
+        </Navbar>
+        
         
         <Container className="border border-3 rounded" style={{ maxWidth:800, padding:10}}>
           <Stack direction='vertical'>

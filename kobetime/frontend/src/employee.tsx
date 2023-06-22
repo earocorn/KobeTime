@@ -75,13 +75,14 @@ export async function fetchTimeEntries(id: string, startDate?: Date, endDate?: D
 }
 
 export async function addTimeEntry(data: {[x: string] :any; }): Promise<string> {
-  const timeEntriesRef = collection(firestore, 'timeEntries');
-  addDoc(timeEntriesRef, data).then(() => {
+  try {
+    const timeEntriesRef = collection(firestore, 'timeEntries');
+    await addDoc(timeEntriesRef, data);
     return 'success';
-  }, () => {
+  } catch (error) {
+    console.error('Error adding time entry: ', error);
     return 'Error: There was an error adding time entry.';
-  });
-  return 'Error: There was an error adding time entry.'
+  }
 }
 
 export async function fetchCurrentEmployee() {

@@ -1,9 +1,14 @@
 import { createUserWithEmailAndPassword, getAuth, isSignInWithEmailLink, onAuthStateChanged, sendPasswordResetEmail, sendSignInLinkToEmail, signInWithEmailAndPassword, signInWithEmailLink, signOut } from "firebase/auth";
 import app, { auth, firestore } from "../private/firebase";
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ErrorMessage from "./ErrorMessage";
 import { collection, getDocs } from "firebase/firestore";
+import Stack from "react-bootstrap/esm/Stack";
+import Container from "react-bootstrap/esm/Container";
+
+import '../styles/Login.css';
+import { Button, FloatingLabel, Form, FormGroup } from "react-bootstrap";
 
 function Login() {
 
@@ -35,6 +40,11 @@ function Login() {
     }
 
     const navigate = useNavigate();
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        handleSignIn();
+    }
 
     async function handleSignIn() {
         try{
@@ -107,39 +117,53 @@ function Login() {
     return (
         <>
         { !signedIn && (<>
-        <h1 style={{ display:'flex', justifyContent:'center'}}>Login</h1>
-        <div>
-            <div className="container-sm border border-5 border-success rounded-5" style={{ maxWidth:350, justifyContent:'center', padding:20 }}>
-            <div style={{ display:'flex', justifyContent:'center', borderBlock:'auto'}} className="container">
-                <div className="col mb-3">
-                <div className="row mb-3">
-                    <label htmlFor="emailSignInInput" className="form-label">Email</label>
-                    <input type="email" className="form-control" id="emailSignInInput" placeholder="name@example.com" onChange={(e) => {
-                        setEmail(e.target.value)
-                        setErrorText("")
-                    }}/>
-                </div>
-                <div className="row mb-3">
-                    <label htmlFor="passSignInInput" className="form-password">Password</label>
-                    <input type="password" className="form-control" id="passSignInInput" onChange={(e) => {
-                        setPassword(e.target.value)
-                        setErrorText("")
-                    }}/>
-                </div>
-                <div className="row mb-2">
-                    <ErrorMessage errormsg={errorText}/>
-                    <button className="btn btn-primary" onClick={handleSignIn}>Sign In</button>
-                </div>
-                <div className="row mb-2">
-                    <a className="link" href="/loginemail" style={{ display:'flex', justifyContent:'center' }}>Sign in via email</a>
-                </div>
-                <div className="row mb-2">
-                    <a className="link" href="/forgotpassword" style={{ display:'flex', justifyContent:'center' }}>Forgot Password?</a>
-                </div>
-                </div>
-            </div>
-            </div>
-        </div>
+        <Container className="loginbox" style={{ maxWidth:350, justifyContent:'center', borderRadius:4, padding:20 }}>
+            <Stack direction="vertical">
+                <h1 style={{ display:'flex', justifyContent:'center' }}>Login</h1>
+                <Form onSubmit={handleSubmit}>
+                    <Form.Group className="mb-3">
+                        <FloatingLabel
+                            label="Email"
+                            className="mb-3"
+                        >
+                        <Form.Control 
+                        type="email" 
+                        placeholder="name@example.com"
+                        onChange={(e) => {
+                            setEmail(e.target.value)
+                            setErrorText("");
+                        }}
+                        />
+                        </FloatingLabel>
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <FloatingLabel
+                            label="Password"
+                        >
+                        <Form.Control
+                        type="password"
+                        placeholder="Password"
+                        onChange={(e) => {
+                            setPassword(e.target.value)
+                            setErrorText("")
+                        }}
+                        />
+                        </FloatingLabel>
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <a className="link" href="/loginemail" style={{ display:'flex', justifyContent:'center' }}>Sign in via email</a>
+                        <a className="link" href="/forgotpassword" style={{ display:'flex', justifyContent:'center' }}>Forgot Password?</a>
+                    </Form.Group>
+                    <Container>
+                        <ErrorMessage errormsg={errorText}/>
+                    </Container>
+                    <div style={{ display:'flex', justifyContent:'center' }}>
+                        <Button type="submit" style={{ width:'100%', borderRadius:4 }}>Sign In</Button>
+                    </div>
+                    
+                </Form>
+            </Stack>
+        </Container>
         </>)}
         {signedIn && (
         <>

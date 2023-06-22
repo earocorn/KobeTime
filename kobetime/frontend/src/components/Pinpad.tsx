@@ -1,5 +1,5 @@
 import { Component, ReactElement, useEffect, useState } from "react";
-import { Alert, Button, ButtonGroup, Col, Container, Row, Stack } from "react-bootstrap";
+import { Alert, Button, ButtonGroup, Col, Container, Modal, Row, Stack } from "react-bootstrap";
 import '../styles/pinpad.css';
 import { Employee, clockEmployee, fetchEmployeeFromPasscode } from "../employee";
 import { useNavigate } from "react-router-dom";
@@ -77,9 +77,8 @@ function Pinpad(props: PinpadProps) {
             </>
         ) : (
             <>
-            { !showResult ? (
                 <>
-            <Container className="border border-4 border-primary rounded-3 p-2 d-flex" style={{ justifyContent:'center', justifyItems:'center', transform:'translate(0, 10vh)', maxWidth:400 }}>
+            <Container className="border border-4 border-primary rounded-3 p-2 d-flex" style={{ justifyContent:'center', justifyItems:'center', maxWidth:400 }}>
                 <Stack direction="vertical" className="" style={{ maxWidth:350 }}>
                     <Alert className="text-center" style={{ fontWeight:'bold' }} variant={props.inOut === 'in' ? 'success' : 'danger'}>You are clocking {props.inOut}.</Alert>
                     <Stack direction="horizontal" className="d-flex" style={{ justifyItems:'center' }}>
@@ -115,26 +114,34 @@ function Pinpad(props: PinpadProps) {
                         })}
                     </Row>    
                     </Container>
-                    
                 </Stack>
             </Container>        
                 </>
-            ) : (
-                <>
-                <Container>
-                    <Stack direction='vertical'>
-                        <Stack direction="horizontal">
-                        {props.backButton}
-                        <h1 className='text-center' style={{ fontStyle:'italic', justifyContent:'center', marginRight:'auto', fontSize:50 }}>Hello, {clockedEmployee?.name}!</h1>
-                        </Stack>
+            
+
+                <Modal
+                show={showResult}
+
+                >
+                    <Modal.Header>
+                        <Modal.Title>
+                            {result[0].length === 0 ? (<h1>Loading...</h1>) : (<h1 className='text-center' style={{ fontStyle:'italic', display:'flex', justifyContent:'center', fontSize:50 }}>Hello, {clockedEmployee?.name}!</h1>)}
+                        </Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <Stack direction='vertical'>
                         
-                        <Alert variant={result[1] === 'success' ? 'success' : 'danger'} style={{ justifyContent:'center', display:'flex', fontWeight:'bold', fontSize:30 }}>
-                            {result[0]}
-                        </Alert>
-                    </Stack>
-                </Container>
-                </>
-            )}
+                            {result[0].length != 0 && (<Alert variant={result[1] === 'success' ? 'success' : 'danger'} style={{ justifyContent:'center', display:'flex', fontWeight:'bold', fontSize:30 }}>
+                                {result[0]}
+                            </Alert>)}
+                        </Stack>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Container style={{ display:'flex', justifyContent:'center' }}>
+                            {props.backButton}
+                        </Container>
+                    </Modal.Footer>
+                </Modal>
             
             </>
         ) }

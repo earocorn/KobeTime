@@ -5,26 +5,9 @@ import Login from './components/Login'
 import EmployeeView from './components/EmployeeView'
 import LoginEmail from './components/LoginEmail'
 import ForgotPassword from './components/ForgotPassword'
-import { getAuth } from 'firebase/auth'
-import { collection, getDocs } from 'firebase/firestore'
-import { firestore } from './private/firebase'
 import ClockPage from './components/ClockPage'
 
 function App() {
-  let employeeAdmin: boolean = false;
-
-  async function fetchCurrentEmployee() {
-    if(getAuth().currentUser) {
-        const employeesRef = collection(firestore, 'employees');
-        const querySnapshot = await getDocs(employeesRef);
-        const employee = querySnapshot.docs.find((user) => user.get('email') === getAuth().currentUser?.email)
-        if(employee) {
-            const employeeData = employee.data();
-            return employeeData.admin;
-        }
-    }
-    return false;
-}
 
   return (
     <Router>

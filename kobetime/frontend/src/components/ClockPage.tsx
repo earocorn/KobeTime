@@ -28,7 +28,7 @@ function ClockPage() {
 
     return (
       <>
-        {valid ? (
+        {/*CHANGE TO valid on production*/true ? (
           <Clock/>
         ) : (
           <h1 style={{ color: "red", display: "flex", justifyContent: "center" }}>

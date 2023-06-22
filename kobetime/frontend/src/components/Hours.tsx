@@ -32,7 +32,7 @@ function Hours(props: HoursProps) {
 
     const currentDate = new Date();
     let [startDate, setStartDate] = useState(currentDate.getDate() < 15 ? (new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)) : (new Date(currentDate.getFullYear(), currentDate.getMonth(), 15)));
-    let [endDate, setEndDate] = useState(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0));
+    let [endDate, setEndDate] = useState(currentDate.getDate() < 15 ? (new Date(currentDate.getFullYear(), currentDate.getMonth(), 14)) : new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0));
     let [show, setShow] = useState(false);
     let [refresh, setRefresh] = useState(false);
 
@@ -85,6 +85,7 @@ function Hours(props: HoursProps) {
     }
 
     async function fetchData(start: Date, end: Date) {
+
         console.info("fetching employee id = (" + props.employeeID + ")")
         const fetchedEmployee = await fetchEmployeeFromID(props.employeeID);
         if(fetchedEmployee) {
@@ -108,7 +109,8 @@ function Hours(props: HoursProps) {
 
     useEffect(() => {
         refreshTable();
-    }, [props]);
+        console.info('useEffect triggered, refreshing table.');
+    }, [props.employeeID]);
 
 
     function showAddModal() {
@@ -133,6 +135,7 @@ function Hours(props: HoursProps) {
             } else {
                 setErrorAlert("Please fill in all fields.");
             }
+            console.error('response is : ' + response);
         } else {
             setErrorAlert("Please fill in all fields.");
         }
@@ -171,12 +174,14 @@ function Hours(props: HoursProps) {
             <div className="container border border-gray border-2 text-center rounded-pill p-2" style={{ maxWidth:275}}>
                 <div className="row" style={{ maxWidth:400, justifyContent:'left'}}>
                     <div className="col-3" style={{ }}>
-                        <div style={{ }}>
+                        <div>
                             <input className="startdateinput" type="date" 
                             value={startDate.toISOString().split('T')[0]} 
                             onKeyDown={(e) => e.preventDefault()}
                             onChange={(e) => {
-                                handleStartDateChange(new Date(e.target.value));
+                                if(!isNaN(Date.parse(e.target.value))) {
+                                    handleStartDateChange(new Date(e.target.value));
+                                }
                             }}/>
                         </div>
                     </div>
@@ -189,7 +194,9 @@ function Hours(props: HoursProps) {
                         value={endDate.toISOString().split('T')[0]}
                         onKeyDown={(e) => e.stopPropagation()}
                         onChange={(e) => {
-                            handleEndDateChange(new Date(e.target.value));
+                            if(!isNaN(Date.parse(e.target.value))) {
+                                handleEndDateChange(new Date(e.target.value));
+                            }
                         }}
                         required
                         />
@@ -251,13 +258,14 @@ function Hours(props: HoursProps) {
             closeButton
             >
                 <Modal.Title>
-                    New Entry
+                    New Entry for {employee?.name}
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body>
             <Form>
                 {errorAlert.length > 0 && (<Alert variant="danger">{errorAlert}</Alert>)}
-                <input
+                <Form.Label>Clock-IN Date and Time</Form.Label>
+                <Form.Control
                 className="clockininput"
                 type="datetime-local"
                 onChange={(e) => {
@@ -267,7 +275,9 @@ function Hours(props: HoursProps) {
                 required
                 />
             <br />
-                <input
+            <Form.Group>
+                <Form.Label>Clock-OUT Date and Time</Form.Label>
+                <Form.Control
                 className="clockoutinput"
                 type="datetime-local"
                 onChange={(e) => {
@@ -276,13 +286,21 @@ function Hours(props: HoursProps) {
                 }}
                 required
                 />
+            </Form.Group>
+                
             </Form>
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="primary" onClick={handleAdd}>
                     Submit
                 </Button>
-                <Button variant="danger">
+                <Button variant="danger"
+                onClick={() => {
+                    setShowAdd(false);
+                    setNewData({});
+                    setErrorAlert("");
+                }}
+                >
                     Cancel
                 </Button>
             </Modal.Footer>
