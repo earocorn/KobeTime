@@ -308,14 +308,21 @@ function ListEmployees() {
         {getAuth().currentUser && signedInUser &&
         (<>
         <>
-        <Navbar bg="dark" variant="dark" expand="default">
-          <Container>
+        <Navbar bg="dark" variant="dark">
+          <Container 
+          style={{
+            display:'flex'
+          }}>
             <Navbar.Brand>KobeTime</Navbar.Brand>
             <Navbar.Toggle aria-controls="nav"/>
-            <Navbar.Collapse id="nav">
+            <Navbar.Collapse id="nav" className="mr-auto">
               <Nav className="mr-auto">
-                <NavDropdown title={`Signed in as ${signedInUser.name}`} style={{ marginRight:'auto' }}>
-                  <NavDropdown.Item onClick={handleGoToProfile}>
+                <NavDropdown 
+                title={`Signed in as ${signedInUser.name}`} 
+                style={{ }}
+                >
+                  <NavDropdown.Item 
+                  onClick={handleGoToProfile}>
                     My Account
                   </NavDropdown.Item>
                   <NavDropdown.Item onClick={handleGoToClock}>
